@@ -20,6 +20,7 @@ const String signInPath = serverPath+"/join-machine";
 const String signOutPath = serverPath+"/leave-machine";
 
 //Global
+bool sim = true;
 bool signedIn = false;
 String user = "";
 String pass = "";
@@ -37,11 +38,11 @@ char keys[ROW_NUM][COLUMN_NUM] = {
 };
 byte pin_rows[ROW_NUM] = {16, 4, 2, 15};
 byte pin_column[COLUMN_NUM] = {19, 18, 5, 17};
-Keypad keypad = Keypad( makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_NUM);
+Keypad pad = Keypad(makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_NUM);
 
 //LCD
 const int rs = 32, en = 33, d4 = 25, d5 = 26, d6 = 27, d7 = 14;
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+LiquidCrystal lcd = LiquidCrystal(rs, en, d4, d5, d6, d7);
 
 //Gasher
 const int red = 22; 
@@ -50,7 +51,7 @@ const int green = 23;
 void setup(){
   //activate
   Serial.begin(115200);
-  lcd.begin(16, 2);
+  if (!sim) lcd.begin(16, 2);
   preferences.begin("app", false);
   pinMode(red,OUTPUT); digitalWrite(red,LOW);
   pinMode(green,OUTPUT); digitalWrite(green,LOW);
@@ -239,20 +240,23 @@ void updApi(){
   });
 } 
 char tread(){
-  char ser = Serial.read();
-  char key = keypad.getKey();
-  if (ser) return ser;
-  else return key;
+  if (!sim) return pad.getKey();
+  else if (Serial.available()) return Serial.read();
+  else return '\0';
 }
 void tprint(String x){
-  lcd.print(x);Serial.print(x);
+  if (!sim) lcd.print(x);
+  else Serial.print(x);
 }
 void tprint(char x){
-  lcd.print(x);Serial.print(x);
+  if (!sim) lcd.print(x);
+  else Serial.print(x);
 }
 void tprint(int x){
-  lcd.print(x);Serial.print(x);
+  if (!sim) lcd.print(x);
+  else Serial.print(x);
 }
 void tclear(){
-  lcd.clear();Serial.println();
+  if (!sim) lcd.clear();
+  else Serial.println();
 }
