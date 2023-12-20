@@ -1,12 +1,20 @@
 #include <ArduinoJson.h>
 #include <Keypad.h>
 #include <LiquidCrystal.h>
+
 #include <WiFi.h>
+#include <WebServer.h>
 #include <HTTPClient.h>
-#include "env.h"
+
+#include <Update.h>
 #include <Preferences.h>
 
-//HTTP
+#include "env.h"
+#include "pages.h"
+
+//Comms
+WiFiServer wifiServer(80);
+WebServer webServer(80);
 const String serverPath = "http://ezserver.local";
 const String signInPath = serverPath+"/join-machine";
 const String signOutPath = serverPath+"/leave-machine";
@@ -15,15 +23,17 @@ const String signOutPath = serverPath+"/leave-machine";
 bool signedIn = false;
 String user = "";
 String pass = "";
+int program = 0;
+Preferences preferences; 
 
 //Keypad
 const int ROW_NUM = 4;
 const int COLUMN_NUM = 4;
 char keys[ROW_NUM][COLUMN_NUM] = {
-  {'1','2','3', 'A'},
-  {'4','5','6', 'B'},
-  {'7','8','9', 'C'},
-  {'*','0','#', 'D'}
+  {'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'}
 };
 byte pin_rows[ROW_NUM] = {16, 4, 2, 15};
 byte pin_column[COLUMN_NUM] = {19, 18, 5, 17};
@@ -40,71 +50,87 @@ const int green = 23;
 void setup(){
   //activate
   Serial.begin(115200);
-  WiFi.begin(NETWORK, PASSWORD);
   lcd.begin(16, 2);
+  preferences.begin("app", false);
   pinMode(red,OUTPUT); digitalWrite(red,LOW);
   pinMode(green,OUTPUT); digitalWrite(green,LOW);
   
   //setup wifi
-  lcd.print("Connecting");
+  program = preferences.getUInt("program", 0);
+  if (program==0 || program==1){
+    WiFi.begin(NETWORK, PASSWORD);    
+  }
+  else if (program==2){
+    WiFi.softAP(ID, CFG_ADMIN);
+    IPAddress IP = WiFi.softAPIP();
+    wifiServer.begin();
+  }
+  tclear();tprint("Initializing wifi");
   while(WiFi.status() != WL_CONNECTED) {
     delay(500);
-    lcd.print(".");
+    tprint(".");
   }
-  lcd.clear();lcd.print("Connected");
+  //setup routes
+  if (program==1){
+    updApi();
+    webServer.begin();
+  }
+  tclear();tprint("Ready!");
   delay(1000);
-  lcd.clear();lcd.print("Welcome!");
 }
 
-void loop(){
-  //handle keypress
-  char key = keypad.getKey();
+void loop() {
+  if(program==0) regLoop();
+  else if (program==1) updLoop();
+  else if (program==2) cfgLoop();
+}
+
+void regLoop(){
+  char key = keypad.getKey(); //handle keypress
   if (key){
-    //# -> sign out
-    if (signedIn){
-      if (key=='#') {
-        if (signOut()) {
-          digitalWrite(green, LOW);
-          lcd.clear();
-          lcd.print("Signed Out");
-          signedIn = !signedIn;
-        }
+    if (signedIn && key=='#'){ //# -> sign out
+      bool res = signOut();
+      if (res) {
+        digitalWrite(green, LOW);
+        tclear();tprint("Signed Out");
+        signedIn = !signedIn;
       }
     }
     else {
-      //D -> pop pass
-      if (key=='D') {
+      if (key=='D') { //D -> pop pass
         pass.remove(pass.length()-1);
-        //display
-        lcd.clear();
-        lcd.print(pass);
+        tclear();tprint(pass);
       }
-      //* -> submit pass
-      else if (key=='*') {
-        lcd.clear();
-        //make request
-        boolean res = signIn();
-        // correct pass
+      else if (key=='*') { //* -> submit pass
+        bool res = signIn();
         if (res) {
-          String message = "Hello ";message.concat(user);
-          lcd.clear();lcd.print(message);
+          tclear();tprint("Hello ");tprint(user);tprint("!");
           digitalWrite(green,HIGH);
           signedIn = true;
         }
-        //wrong pass
-        else lcd.print("Denied Access");
+        else {
+          tclear();tprint("Denied Access.");
+        }
         pass="";
       }
-      //else -> add char to pass
-      else {
+      else { //all other keys -> add char to pass
         pass.concat(key);
-        //display
-        lcd.clear();
-        lcd.print(pass);
-        Serial.println(pass);
+        tclear();tprint(pass);
       }
     }
   }
+}
+
+void updLoop(){
+  webServer.handleClient();
+  delay(1);
+}
+
+void cfgLoop(){
+//  WiFiClient client = server.available();
+//  if (client) {  
+//    String currentLine = "";     
+//  }
 }
 
 boolean signIn(){
@@ -135,7 +161,7 @@ boolean signIn(){
       return true;
     }
     else {
-      lcd.clear();lcd.print("Error: ");lcd.print(httpResponseCode);
+      tclear();tprint("Error: ");tprint(httpResponseCode);
       user = "";
       pass = "";
       http.end();
@@ -163,7 +189,7 @@ boolean signOut(){
       return true;
     }
     else {
-      lcd.clear();lcd.print("Error Signing Out: ");lcd.print(httpResponseCode);
+      tclear();tprint("Error Signing Out: ");tprint(httpResponseCode);
       user = "";
       pass = "";
       http.end();
@@ -171,4 +197,55 @@ boolean signOut(){
     }
   }
   return false;
+}
+
+void updApi(){
+  webServer.on("/", HTTP_GET, []() {
+    webServer.sendHeader("Connection", "close");
+    webServer.send(200, "text/html", loginIndex);
+  });
+  webServer.on("/serverIndex", HTTP_GET, []() {
+    webServer.sendHeader("Connection", "close");
+    webServer.send(200, "text/html", serverIndex);
+  });
+  /*handling uploading firmware file */
+  webServer.on("/update", HTTP_POST, []() {
+    webServer.sendHeader("Connection", "close");
+    webServer.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    ESP.restart();
+  }, []() {
+    HTTPUpload& upload = webServer.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+      Serial.printf("Update: %s\n", upload.filename.c_str());
+      if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+      /* flashing firmware to ESP*/
+      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_END) {
+      if (Update.end(true)) { //true to set the size to the current progress
+        Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+      } else {
+        Update.printError(Serial);
+      }
+    }
+  });
+} 
+char read(){
+  Serial.
+}
+void tprint(String x){
+  lcd.print(x);Serial.print(x);
+}
+void tprint(char x){
+  lcd.print(x);Serial.print(x);
+}
+void tprint(int x){
+  lcd.print(x);Serial.print(x);
+}
+void tclear(){
+  lcd.clear();Serial.println();
 }
