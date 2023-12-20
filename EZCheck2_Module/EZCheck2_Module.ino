@@ -102,6 +102,10 @@ void regLoop(){
         tclear();tprint(pass);
       }
       else if (key=='*') { //* -> submit pass
+        if (pass == UPD_ADMIN){
+          preferences.putUInt("program",1);
+          ESP.restart();
+        }
         bool res = signIn();
         if (res) {
           tclear();tprint("Hello ");tprint(user);tprint("!");
