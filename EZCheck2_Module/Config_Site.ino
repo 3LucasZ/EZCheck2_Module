@@ -1,1 +1,1 @@
-const html = ""
+const String html = "";
