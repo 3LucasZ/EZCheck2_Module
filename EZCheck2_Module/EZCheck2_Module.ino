@@ -3,6 +3,7 @@
 #include <LiquidCrystal.h>
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <WebServer.h>
 #include <HTTPClient.h>
 
@@ -15,9 +16,10 @@
 //Comms
 WiFiServer wifiServer(80);
 WebServer webServer(80);
-const String serverPath = "http://ezserver.local";
-const String signInPath = serverPath+"/join-machine";
-const String signOutPath = serverPath+"/leave-machine";
+//const String serverPath = "http://ezserver.local";
+const String serverPath = "https://192.168.1.208:3000";
+const String signInPath = serverPath+"/api/post/join-machine";
+const String signOutPath = serverPath+"/api/post/leave-machine";
 
 //Global
 bool sim = true;
@@ -144,21 +146,21 @@ boolean signIn(){
     //confirmation
     lcd.clear();lcd.print("Logging in");
     //send post request
-    WiFiClient client;HTTPClient http;
+    WiFiClientSecure client;client.setInsecure();HTTPClient http;
     http.begin(client, signInPath);
     http.addHeader("Content-Type", "application/json");
     DynamicJsonDocument doc(1024);
     doc["machineName"] = ID;
     doc["machineSecret"] = SECRET;
+    doc["studentPIN"] = pass;
+    doc["IP"] = WiFi.localIP();
     String msg; serializeJson(doc,msg);
     int httpResponseCode = http.POST(msg);
-    //valid request
+    //inspect response
     String response = http.getString();
     DynamicJsonDocument response_data(1024);
-    deserializeJson(response_data, response);
-    bool auth = response_data["authorized"];
-    
-    if (auth) {
+    deserializeJson(response_data, response);    
+    if (httpResponseCode==200) {
       String tmp = response_data["name"];
       user = tmp;
       pass = "";
@@ -180,15 +182,13 @@ boolean signOut(){
   //connected 
   if(WiFi.status() == WL_CONNECTED){
     //send post request
-    WiFiClient client; HTTPClient http;
+    WiFiClientSecure client;client.setInsecure();HTTPClient http;
     http.begin(client, signOutPath);
     http.addHeader("Content-Type", "application/json");
     DynamicJsonDocument doc(1024);
     doc["machineName"] = ID;
     doc["machineSecret"] = SECRET;
-    doc["studentPIN"] = pass;
-    doc["IP"] = WiFi.localIP();
-    String msg; serializeJson(doc,msg);
+    String msg; serializeJson(doc, msg);
     int httpResponseCode = http.POST(msg);
     if (httpResponseCode == 200) {
       return true;
