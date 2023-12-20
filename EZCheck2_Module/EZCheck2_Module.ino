@@ -86,7 +86,7 @@ void loop() {
 }
 
 void regLoop(){
-  char key = keypad.getKey(); //handle keypress
+  char key = tread(); //handle keypress
   if (key){
     if (signedIn && key=='#'){ //# -> sign out
       bool res = signOut();
@@ -234,8 +234,11 @@ void updApi(){
     }
   });
 } 
-char read(){
-  Serial.
+char tread(){
+  char ser = Serial.read();
+  char key = keypad.getKey();
+  if (ser) return ser;
+  else return key;
 }
 void tprint(String x){
   lcd.print(x);Serial.print(x);
