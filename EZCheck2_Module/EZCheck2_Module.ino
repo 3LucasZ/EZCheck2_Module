@@ -68,17 +68,17 @@ void setup(){
     IPAddress IP = WiFi.softAPIP();
     wifiServer.begin();
   }
-  tclear();tprint("Initializing wifi");
-  while(WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    tprint(".");
-  }
   //setup routes
   if (program==1){
     updApi();
     webServer.begin();
   }
-  tclear();tprint("Ready!");
+  tclear();tprint("Initializing wifi");
+  while(WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    tprint(".");
+  }
+  tclear();tprint("Ready! IP: ");tprint(WiFi.localIP());tprint(" Tag: ");tprint(TAG);
   delay(1000);
 }
 
@@ -232,6 +232,7 @@ void updApi(){
       }
     } else if (upload.status == UPLOAD_FILE_END) {
       if (Update.end(true)) { //true to set the size to the current progress
+        preferences.putUInt("program", 0);
         Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
       } else {
         Update.printError(Serial);
@@ -253,6 +254,10 @@ void tprint(char x){
   else Serial.print(x);
 }
 void tprint(int x){
+  if (!sim) lcd.print(x);
+  else Serial.print(x);
+}
+void tprint(IPAddress x){
   if (!sim) lcd.print(x);
   else Serial.print(x);
 }

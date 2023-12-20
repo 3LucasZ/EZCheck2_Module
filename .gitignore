@@ -1,4 +1,7 @@
-
+#general
 .DS_Store
+
+#arduino
 EZCheck2_Module/env.ino
 EZCheck2_Module/env.h
+*.bin
