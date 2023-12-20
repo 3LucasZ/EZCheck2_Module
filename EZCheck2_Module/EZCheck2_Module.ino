@@ -2,46 +2,50 @@
 #include <Keypad.h>
 #include <LiquidCrystal.h>
 #include <WiFi.h>
-#include <HttpClient.h>
-#include "env.h"
+#include <HTTPClient.h>
+//HTTP vars
+const char* ssid = "***REMOVED***";
+const char* password = "***REMOVED***";
 
-//constants
-const String server = "http://ezserver.local";
-const String join_path = "/post/join-machine";
-const String leave_path = "/post/leave-machine";
-
-//global state
+const String machineID = "machine1";
+const String k = "http://10.124.6.136:8080";
+const String path = k+"/auth";
+const String signout = k+"/signout";
 bool signedIn = false;
-String pass = "";
+String curr_name = "";
 
-//Keypad
-const int ROW_NUM = 4;
-const int COLUMN_NUM = 4;
+//Keypad vars
+const int ROW_NUM = 4; //four rows
+const int COLUMN_NUM = 4; //four columns
+
 char keys[ROW_NUM][COLUMN_NUM] = {
   {'1','2','3', 'A'},
   {'4','5','6', 'B'},
   {'7','8','9', 'C'},
   {'*','0','#', 'D'}
 };
-byte pin_rows[ROW_NUM] = {16, 4, 2, 15};
-byte pin_column[COLUMN_NUM] = {19, 18, 5, 17};
+
+byte pin_rows[ROW_NUM] = {17, 5, 18, 19}; //connect to the row pinouts of the keypad {R1, R2, R3, R4}
+byte pin_column[COLUMN_NUM] = {15, 2, 4, 16}; //connect to the column pinouts of the keypad {C1, C2, C3, C4}
+
 Keypad keypad = Keypad( makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_NUM);
 
-//LCD
-const int rs = 32, en = 33, d4 = 25, d5 = 26, d6 = 27, d7 = 14;
+//LCD vars
+const int rs = 33, en = 25, d4 = 26, d5 = 27, d6 = 14, d7 = 32;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-//LED
-const int red  =  22;
-const int green = 23; 
+//LED vars
+const int led  =  21; 
+
+//Pass vars
+String pass = "";
 
 void setup(){
   //activate
-  Serial.begin(115200);
-  WiFi.begin(NETWORK, PASSWORD);
+  Serial.begin(9600);
+  WiFi.begin(ssid, password);
   lcd.begin(16, 2);
-  pinMode(red,OUTPUT); 
-  pinMode(green,OUTPUT); 
+  pinMode(led,OUTPUT); 
   
   //setup wifi
   lcd.print("Connecting");
@@ -54,9 +58,9 @@ void setup(){
   delay(1000);
   
   //init state
-  lcd.clear(); lcd.print("Welcome!");
-  digitalWrite(red,LOW);
-  digitalWrite(green,LOW);
+  lcd.clear();
+  lcd.print("Welcome!");
+  digitalWrite(led,LOW);
 }
 
 void loop(){
@@ -66,8 +70,8 @@ void loop(){
     //# -> sign out
     if (signedIn){
       if (key=='#') {
-        if (signOut()) {
-          digitalWrite(green, LOW);
+        if (machineSignout()) {
+          digitalWrite(led, LOW);
           lcd.clear();
           lcd.print("Signed Out");
           signedIn = !signedIn;
@@ -75,7 +79,7 @@ void loop(){
       }
     }
     else {
-      //D -> pop pass
+      //D -> cut pass
       if (key=='D') {
         pass.remove(pass.length()-1);
         //display
@@ -86,14 +90,14 @@ void loop(){
       else if (key=='*') {
         lcd.clear();
         //make request
-        boolean res = signIn();
+        boolean res = validate(pass);
         // correct pass
         if (res) {
           lcd.clear();
           String message = "Hello ";
           message.concat(curr_name);
           lcd.print(message);
-          digitalWrite(green,HIGH);
+          digitalWrite(led,HIGH);
           signedIn = true;
         }
         //wrong pass
@@ -112,12 +116,15 @@ void loop(){
   }
 }
 
-boolean signIn(){
+boolean validate(String pass){
+  //connected 
   if(WiFi.status() == WL_CONNECTED){
     //confirmation
-    lcd.clear(); lcd.print("Logging in...");
+    lcd.clear();
+    lcd.print("Sending pin");
     //send post request
-    WiFiClient client; HTTPClient http;
+    WiFiClient client;
+    HTTPClient http;
     http.begin(client, path);
     http.addHeader("Content-Type", "application/json");
     int httpResponseCode = http.POST("{\"code\":\"" + pass + "\",\"machineID\":\"" + machineID+"\"}");
@@ -149,7 +156,7 @@ boolean signIn(){
   return false;
 }
 
-boolean signOut(){
+boolean machineSignout(){
   //connected 
   if(WiFi.status() == WL_CONNECTED){
     //send post request
