@@ -13,6 +13,10 @@
 #include "env.h"
 #include "pages.h"
 
+//META
+#define VERSION "2.2"
+#define DEFAULT_ID "machine-"+millis()
+
 //Comms
 WiFiServer wifiServer(80);
 WebServer webServer(80);
@@ -26,8 +30,11 @@ bool sim = true;
 bool signedIn = false;
 String user = "";
 String pass = "";
-int program = 0;
+
+//Preferences
 Preferences preferences; 
+int program;
+String id;
 
 //Keypad
 const int ROW_NUM = 4;
@@ -57,28 +64,54 @@ void setup(){
   preferences.begin("app", false);
   pinMode(red,OUTPUT); digitalWrite(red,LOW);
   pinMode(green,OUTPUT); digitalWrite(green,LOW);
-  
-  //setup wifi
+
+  //load preferences
   program = preferences.getUInt("program", 0);
+  String network = preferences.getString("network", DEFAULT_NETWORK);
+  String password = preferences.getString("password", DEFAULT_PASSWORD);
+  id = preferences.getString("id", DEFAULT_ID);
+  
+  //begin wifi 
   if (program==0 || program==1){
-    WiFi.begin(NETWORK, PASSWORD);    
+    WiFi.begin(network.c_str(), password.c_str());    
   }
   else if (program==2){
-    WiFi.softAP(ID, CFG_ADMIN);
-    IPAddress IP = WiFi.softAPIP();
+    WiFi.softAP(id.c_str(), ADMIN_PASSWORD);
     wifiServer.begin();
   }
+  
   //setup routes
   if (program==1){
     updApi();
     webServer.begin();
   }
+  
+  //connect wifi
   tclear();tprint("Initializing wifi");
   while(WiFi.status() != WL_CONNECTED) {
     delay(500);
     tprint(".");
+    if (WiFi.status() == WL_CONNECT_FAILED){
+      tclear();
+      tprint("Failed to connect."); 
+      tprint(" Press (A) to restart device in WiFi configuration mode.");
+      tprint(" Press (B) to try to reconnect.");
+      while (true){
+        char key = tread();
+        if (key=='A') {
+          preferences.putUInt("program",2);
+          ESP.restart();
+        } else if (key=='B') {
+          ESP.restart();
+        }
+      }
+    }
   }
-  tclear();tprint("Ready! IP: ");tprint(WiFi.localIP());tprint(" Tag: ");tprint(TAG);
+  tclear();
+  tprint("Ready!")
+  tprint(" IP: ");tprint(WiFi.localIP());
+  tprint(" Firmware Version: ");tprint(VERSION);
+  tprint(" Program: ";tprint(program);
   delay(1000);
 }
 
@@ -91,39 +124,19 @@ void loop() {
 void regLoop(){
   char key = tread(); //handle keypress
   if (key){
-    if (signedIn && key=='#'){ //# -> sign out
-      bool res = signOut();
-      if (res) {
-        digitalWrite(green, LOW);
-        tclear();tprint("Signed Out");
-        signedIn = !signedIn;
-      }
-    }
-    else {
-      if (key=='D') { //D -> pop pass
-        pass.remove(pass.length()-1);
-        tclear();tprint(pass);
-      }
-      else if (key=='*') { //* -> submit pass
-        if (pass == UPD_ADMIN){
-          preferences.putUInt("program",1);
-          ESP.restart();
-        }
-        bool res = signIn();
-        if (res) {
-          tclear();tprint("Hello ");tprint(user);tprint("!");
-          digitalWrite(green,HIGH);
-          signedIn = true;
-        }
-        else {
-          tclear();tprint("Denied Access.");
-        }
-        pass="";
-      }
-      else { //all other keys -> add char to pass
-        pass.concat(key);
-        tclear();tprint(pass);
-      }
+    if (key=='#') { //# -> sign out
+      if (signedIn) signOut();
+    } else if (key=='D') { //D -> pop pass
+      pass.remove(pass.length()-1);
+      tclear();tprint(pass);
+    } else if (key=='*') { //* -> submit pass
+      if (pass == ADMIN_PASSWORD){
+        preferences.putUInt("program",1);
+        ESP.restart();
+      } else signIn();
+    } else { //all other keys -> add char to pass
+      pass.concat(key);
+      tclear();tprint(pass);
     }
   }
 }
@@ -141,53 +154,57 @@ void cfgLoop(){
 }
 
 boolean signIn(){
-  //connected 
+  //ensure connected 
   if(WiFi.status() == WL_CONNECTED){
     //confirmation
-    lcd.clear();lcd.print("Logging in");
-    //send post request
+    tclear();tprint("Logging in.");
+    //send request
     WiFiClientSecure client;client.setInsecure();HTTPClient http;
     http.begin(client, signInPath);
     http.addHeader("Content-Type", "application/json");
     DynamicJsonDocument doc(1024);
-    doc["machineName"] = ID;
-    doc["machineSecret"] = SECRET;
+    doc["machineName"] = id;
+    doc["machineSecret"] = API_KEY;
     doc["studentPIN"] = pass;
     doc["IP"] = WiFi.localIP();
     String msg; serializeJson(doc,msg);
-    int httpResponseCode = http.POST(msg);
-    //inspect response
-    String response = http.getString();
-    DynamicJsonDocument response_data(1024);
-    deserializeJson(response_data, response);    
-    if (httpResponseCode==200) {
+    int resCode = http.POST(msg);
+    //inspect res
+    String res = http.getString();
+    DynamicJsonDocument resData(1024);
+    deserializeJson(resData, res);    
+    if (resCode==200) {
       String tmp = response_data["name"];
       user = tmp;
       pass = "";
       http.end();
+      tclear();tprint("Hello ");tprint(user);tprint("!");
+      digitalWrite(green,HIGH);
+      signedIn = true;
       return true;
-    }
-    else {
-      tclear();tprint("Error: ");tprint(httpResponseCode);
+    } else {
       user = "";
       pass = "";
       http.end();
+      tclear();tprint(res);
+      digitalWrite(red,HIGH);
       return false;
     }
   }
+  tclear();tprint("WiFi not connected.");
   return false;
 }
 
 boolean signOut(){
-  //connected 
+  //ensure connected 
   if(WiFi.status() == WL_CONNECTED){
-    //send post request
+    //send request
     WiFiClientSecure client;client.setInsecure();HTTPClient http;
     http.begin(client, signOutPath);
     http.addHeader("Content-Type", "application/json");
     DynamicJsonDocument doc(1024);
-    doc["machineName"] = ID;
-    doc["machineSecret"] = SECRET;
+    doc["machineName"] = id;
+    doc["machineSecret"] = API_KEY;
     String msg; serializeJson(doc, msg);
     int httpResponseCode = http.POST(msg);
     if (httpResponseCode == 200) {
@@ -201,6 +218,7 @@ boolean signOut(){
       return false;
     }
   }
+  tclear();tprint("WiFi not connected.");
   return false;
 }
 
