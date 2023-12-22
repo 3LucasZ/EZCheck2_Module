@@ -35,7 +35,7 @@ String id;
 String tar;
 String network;
 String password;
-int program;
+bool isSTA;
 
 //Keypad
 const int ROW_NUM = 4;
@@ -73,35 +73,31 @@ void setup(){
   signOutPath = tar + "/api/post/leave-machine";
   network = preferences.getString("network", DEFAULT_NETWORK);
   password = preferences.getString("password", DEFAULT_PASSWORD);
-  program = preferences.getUInt("program", 0);
+  isSTA = preferences.getBool("isSTA", true);
   
-  //begin wifi + init
-  if (program==0){
+  //begin wifi
+  if (isSTA){
     WiFi.begin(network.c_str(), password.c_str());    
-  } else if (program==1){
-    WiFi.begin(network.c_str(), password.c_str());
-    createWebServerApi();
-    webServer.begin(); 
-  } else if (program==2){
+  } else {
     WiFi.softAP(id.c_str(), ADMIN_PASSWORD);
-    createWebServerApi();
-    webServer.begin(); 
-    while(WiFi.status() != WL_CONNECTED) delay(500);
-    tprint("IP: ");tprint(WiFi.localIP());tprint(" ");
   }
 
+  //webserver
+  createWebServerApi();
+  webServer.begin(); 
+
   //init
+  if (!isSTA) {
+    while(WiFi.status() != WL_CONNECTED) delay(500);
+    tprint(" IP: ");tprint(WiFi.localIP());tprint(" ");
+  }
   tprint(" Firmware Version: ");tprint(VERSION);tprint(" ");
-  tprint(" Program: ");tprint(program);tprint(" ");
+  tprint(" isSTA: ");tprint(isSTA);tprint(" ");
   delay(1000);
 }
 
 void loop() {
-  if(program==0) regLoop();
-  else if (program==1) cfgLoop();
-}
-
-void regLoop(){
+  webServer.handleClient(); //handle webserver clients
   char key = tread(); //handle keypress
   if (key){
     if (key=='#') { //# -> sign out
@@ -110,8 +106,8 @@ void regLoop(){
       pass.remove(pass.length()-1);
       tclear();tprint(pass);
     } else if (key=='*') { //* -> submit pass
-      if (pass == ADMIN_PASSWORD){
-        preferences.putUInt("program",1);
+      if (pass == ADMIN_PASSWORD){ //toggle STA/AP 
+        preferences.putUInt("isSTA",!isSTA);
         ESP.restart();
       } else signIn();
     } else { //all other keys -> add char to pass
@@ -119,10 +115,6 @@ void regLoop(){
       tclear();tprint(pass);
     }
   }
-}
-
-void cfgLoop(){
-  webServer.handleClient();
   delay(1);
 }
 
@@ -167,6 +159,8 @@ boolean signIn(){
 boolean signOut(){
   //ensure connected 
   if(WiFi.status() == WL_CONNECTED){
+    //confirmation
+    tclear();tprint("Signing out.");
     //send request
     WiFiClientSecure client;client.setInsecure();HTTPClient http;
     http.begin(client, signOutPath);
@@ -186,8 +180,8 @@ boolean signOut(){
       return true;
     }
     else {
-      tclear();tprint("Error signing out: ");tprint(res);
       user = "";pass = "";http.end();
+      tclear();tprint(res);
       return false;
     }
   }
@@ -196,15 +190,12 @@ boolean signOut(){
 }
 
 void createWebServerApi(){
+  //home page with main forms
   webServer.on("/", HTTP_GET, []() {
-    webServer.sendHeader("Connection", "close");
-    webServer.send(200, "text/html", loginIndex);
-  });
-  webServer.on("/serverIndex", HTTP_GET, []() {
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "text/html", serverIndex);
   });
-  /*handling uploading firmware file */
+  //handling uploading firmware file
   webServer.on("/update", HTTP_POST, []() {
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
@@ -223,7 +214,7 @@ void createWebServerApi(){
       }
     } else if (upload.status == UPLOAD_FILE_END) {
       if (Update.end(true)) { //true to set the size to the current progress
-        preferences.putUInt("program", 0);
+        preferences.putBool("isSTA", true);
         Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
       } else {
         Update.printError(Serial);
