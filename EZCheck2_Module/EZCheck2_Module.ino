@@ -80,25 +80,25 @@ void setup(){
     WiFi.begin(network.c_str(), password.c_str());    
   } else if (program==1){
     WiFi.begin(network.c_str(), password.c_str());
-    updApi();
+    createWebServerApi();
     webServer.begin(); 
   } else if (program==2){
     WiFi.softAP(id.c_str(), ADMIN_PASSWORD);
-    wifiServer.begin();
+    createWebServerApi();
+    webServer.begin(); 
     while(WiFi.status() != WL_CONNECTED) delay(500);
-    tprint("IP: ");tprint(WiFi.localIP());
+    tprint("IP: ");tprint(WiFi.localIP());tprint(" ");
   }
 
   //init
-  tprint(" Firmware Version: ");tprint(VERSION);
-  tprint(" Program: ";tprint(program);
+  tprint(" Firmware Version: ");tprint(VERSION);tprint(" ");
+  tprint(" Program: ");tprint(program);tprint(" ");
   delay(1000);
 }
 
 void loop() {
   if(program==0) regLoop();
-  else if (program==1) updLoop();
-  else if (program==2) cfgLoop();
+  else if (program==1) cfgLoop();
 }
 
 void regLoop(){
@@ -121,16 +121,9 @@ void regLoop(){
   }
 }
 
-void updLoop(){
+void cfgLoop(){
   webServer.handleClient();
   delay(1);
-}
-
-void cfgLoop(){
-//  WiFiClient client = server.available();
-//  if (client) {  
-//    String currentLine = "";     
-//  }
 }
 
 boolean signIn(){
@@ -154,7 +147,7 @@ boolean signIn(){
     DynamicJsonDocument resData(1024);
     deserializeJson(resData, res);    
     if (resCode==200) {
-      String tmp = response_data["name"];
+      String tmp = resData["name"];
       user = tmp;pass = "";http.end();
       tclear();tprint("Hello ");tprint(user);tprint("!");
       digitalWrite(green,HIGH);
@@ -202,7 +195,7 @@ boolean signOut(){
   return false;
 }
 
-void updApi(){
+void createWebServerApi(){
   webServer.on("/", HTTP_GET, []() {
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "text/html", loginIndex);
@@ -238,6 +231,8 @@ void updApi(){
     }
   });
 } 
+
+//io
 char tread(){
   if (!sim) return pad.getKey();
   else if (Serial.available()) return Serial.read();
