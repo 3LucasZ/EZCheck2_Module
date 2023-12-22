@@ -13,17 +13,15 @@
 #include "env.h"
 #include "pages.h"
 
-//META
+//Meta
 #define VERSION "2.2"
 #define DEFAULT_ID "machine-"+millis()
+#define DEFAULT_TAR "https://ezserver.local"
 
-//Comms
-WiFiServer wifiServer(80);
+//Webserver
 WebServer webServer(80);
-//const String serverPath = "http://ezserver.local";
-const String serverPath = "https://192.168.1.208:3000";
-const String signInPath = serverPath+"/api/post/join-machine";
-const String signOutPath = serverPath+"/api/post/leave-machine";
+String signInPath; 
+String signOutPath;
 
 //Global
 bool sim = true;
@@ -33,8 +31,11 @@ String pass = "";
 
 //Preferences
 Preferences preferences; 
-int program;
 String id;
+String tar;
+String network;
+String password;
+int program;
 
 //Keypad
 const int ROW_NUM = 4;
@@ -66,50 +67,29 @@ void setup(){
   pinMode(green,OUTPUT); digitalWrite(green,LOW);
 
   //load preferences
-  program = preferences.getUInt("program", 0);
-  String network = preferences.getString("network", DEFAULT_NETWORK);
-  String password = preferences.getString("password", DEFAULT_PASSWORD);
   id = preferences.getString("id", DEFAULT_ID);
+  tar = preferences.getString("tar", DEFAULT_TAR);
+  signInPath = tar + "/api/post/join-machine";
+  signOutPath = tar + "/api/post/leave-machine";
+  network = preferences.getString("network", DEFAULT_NETWORK);
+  password = preferences.getString("password", DEFAULT_PASSWORD);
+  program = preferences.getUInt("program", 0);
   
-  //begin wifi 
-  if (program==0 || program==1){
+  //begin wifi + init
+  if (program==0){
     WiFi.begin(network.c_str(), password.c_str());    
-  }
-  else if (program==2){
+  } else if (program==1){
+    WiFi.begin(network.c_str(), password.c_str());
+    updApi();
+    webServer.begin(); 
+  } else if (program==2){
     WiFi.softAP(id.c_str(), ADMIN_PASSWORD);
     wifiServer.begin();
+    while(WiFi.status() != WL_CONNECTED) delay(500);
+    tprint("IP: ");tprint(WiFi.localIP());
   }
-  
-  //setup routes
-  if (program==1){
-    updApi();
-    webServer.begin();
-  }
-  
-  //connect wifi
-  tclear();tprint("Initializing wifi");
-  while(WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    tprint(".");
-    if (WiFi.status() == WL_CONNECT_FAILED){
-      tclear();
-      tprint("Failed to connect."); 
-      tprint(" Press (A) to restart device in WiFi configuration mode.");
-      tprint(" Press (B) to try to reconnect.");
-      while (true){
-        char key = tread();
-        if (key=='A') {
-          preferences.putUInt("program",2);
-          ESP.restart();
-        } else if (key=='B') {
-          ESP.restart();
-        }
-      }
-    }
-  }
-  tclear();
-  tprint("Ready!")
-  tprint(" IP: ");tprint(WiFi.localIP());
+
+  //init
   tprint(" Firmware Version: ");tprint(VERSION);
   tprint(" Program: ";tprint(program);
   delay(1000);
@@ -169,23 +149,19 @@ boolean signIn(){
     doc["IP"] = WiFi.localIP();
     String msg; serializeJson(doc,msg);
     int resCode = http.POST(msg);
-    //inspect res
+    //handle res
     String res = http.getString();
     DynamicJsonDocument resData(1024);
     deserializeJson(resData, res);    
     if (resCode==200) {
       String tmp = response_data["name"];
-      user = tmp;
-      pass = "";
-      http.end();
+      user = tmp;pass = "";http.end();
       tclear();tprint("Hello ");tprint(user);tprint("!");
       digitalWrite(green,HIGH);
       signedIn = true;
       return true;
     } else {
-      user = "";
-      pass = "";
-      http.end();
+      user = "";pass = "";http.end();
       tclear();tprint(res);
       digitalWrite(red,HIGH);
       return false;
@@ -206,15 +182,19 @@ boolean signOut(){
     doc["machineName"] = id;
     doc["machineSecret"] = API_KEY;
     String msg; serializeJson(doc, msg);
-    int httpResponseCode = http.POST(msg);
-    if (httpResponseCode == 200) {
+    int responseCode = http.POST(msg);
+    //handle res
+    String res = http.getString();
+    if (responseCode == 200) {
+      digitalWrite(green, LOW);
+      tclear();tprint("Signed out.");
+      user = "";pass = "";http.end();
+      signedIn = false;
       return true;
     }
     else {
-      tclear();tprint("Error Signing Out: ");tprint(httpResponseCode);
-      user = "";
-      pass = "";
-      http.end();
+      tclear();tprint("Error signing out: ");tprint(res);
+      user = "";pass = "";http.end();
       return false;
     }
   }
