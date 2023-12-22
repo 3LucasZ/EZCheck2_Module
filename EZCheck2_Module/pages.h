@@ -34,3 +34,4 @@ const char* serverIndex =
  "});"
  "});"
  "</script>";
+ const char* testPage = "hello world!";

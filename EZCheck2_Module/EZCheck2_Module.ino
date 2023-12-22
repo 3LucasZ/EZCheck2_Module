@@ -67,7 +67,7 @@ void setup(){
   pinMode(green,OUTPUT); digitalWrite(green,LOW);
 
   //load preferences
-  id = preferences.getString("id", DEFAULT_ID);
+  id = preferences.getString("id", DEFAULT_ID); if (!id) id = DEFAULT_ID;
   tar = preferences.getString("tar", DEFAULT_TAR);
   signInPath = tar + "/api/post/join-machine";
   signOutPath = tar + "/api/post/leave-machine";
@@ -77,9 +77,19 @@ void setup(){
   
   //begin wifi
   if (isSTA){
-    WiFi.begin(network.c_str(), password.c_str());    
+    WiFi.begin(network.c_str(), password.c_str()); 
+    tclear();tprint("Connecting");
+    int cnt = 0;
+    while(WiFi.status() != WL_CONNECTED && cnt < 20) {
+      delay(500);
+      tprint(".");
+      cnt++;
+    } 
+    if (WiFi.status() == WL_CONNECTED) {tclear();tprint("Connection succeeded.");}
+    else {tclear();tprint("Connection failed.");}  
   } else {
     WiFi.softAP(id.c_str(), ADMIN_PASSWORD);
+    tclear();tprint("SSID: ");tprint(id);
   }
 
   //webserver
@@ -87,12 +97,9 @@ void setup(){
   webServer.begin(); 
 
   //init
-  if (!isSTA) {
-    while(WiFi.status() != WL_CONNECTED) delay(500);
-    tprint(" IP: ");tprint(WiFi.localIP());tprint(" ");
-  }
+  tprint(" IP: ");tprint(isSTA?WiFi.localIP():WiFi.softAPIP());tprint(" ");
   tprint(" Firmware Version: ");tprint(VERSION);tprint(" ");
-  tprint(" isSTA: ");tprint(isSTA);tprint(" ");
+  tprint(" Mode: ");tprint(isSTA?"STA":"AP");tprint(" ");
   delay(1000);
 }
 
@@ -107,7 +114,7 @@ void loop() {
       tclear();tprint(pass);
     } else if (key=='*') { //* -> submit pass
       if (pass == ADMIN_PASSWORD){ //toggle STA/AP 
-        preferences.putUInt("isSTA",!isSTA);
+        preferences.putBool("isSTA",!isSTA);
         ESP.restart();
       } else signIn();
     } else { //all other keys -> add char to pass
@@ -194,6 +201,11 @@ void createWebServerApi(){
   webServer.on("/", HTTP_GET, []() {
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "text/html", serverIndex);
+  });
+  //test
+  webServer.on("/test", HTTP_GET, []() {
+    webServer.sendHeader("Connection", "close");
+    webServer.send(200, "text/html", testPage);
   });
   //handling uploading firmware file
   webServer.on("/update", HTTP_POST, []() {
