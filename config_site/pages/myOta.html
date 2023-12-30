@@ -1,0 +1,63 @@
+<body>
+  <form method="POST" action="#" enctype="multipart/form-data" id="upload_form">
+    <input type="file" name="update" />
+    <input type="submit" value="Update" />
+  </form>
+  <div id="prg">progress: 0%</div>
+  <script>
+    document.querySelector("form").submit(function (e) {
+      e.preventDefault();
+      const form = document.querySelector("#upload_form")[0];
+      const data = new FormData(form);
+      const url = new URL("/update");
+      const options = {
+        method: form.method,
+        body: data,
+      };
+      fetch(url, options);
+
+      var xhr = new window.XMLHttpRequest();
+      xhr.upload.addEventListener(
+        "progress",
+        function (evt) {
+          if (evt.lengthComputable) {
+            var per = evt.loaded / evt.total;
+            document
+              .querySelector("#prg")
+              .html("progress: " + Math.round(per * 100) + "%");
+          }
+        },
+        false
+      );
+      xhr.open("POST", "/update", true);
+      xhr.send();
+      $.ajax({
+        url: "/update",
+        type: "POST",
+        data: data,
+        contentType: false,
+        processData: false,
+        xhr: function () {
+          var xhr = new window.XMLHttpRequest();
+          xhr.upload.addEventListener(
+            "progress",
+            function (evt) {
+              if (evt.lengthComputable) {
+                var per = evt.loaded / evt.total;
+                document
+                  .querySelector("#prg")
+                  .html("progress: " + Math.round(per * 100) + "%");
+              }
+            },
+            false
+          );
+          return xhr;
+        },
+        success: function (d, s) {
+          console.log("success!");
+        },
+        error: function (a, b, c) {},
+      });
+    });
+  </script>
+</body>
