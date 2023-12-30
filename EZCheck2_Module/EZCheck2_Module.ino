@@ -24,7 +24,7 @@ String signInPath;
 String signOutPath;
 
 //Global
-bool sim = true;
+bool sim = false;
 bool signedIn = false;
 String user = "";
 String pass = "";
