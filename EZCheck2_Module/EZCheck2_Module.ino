@@ -85,21 +85,18 @@ void setup(){
       tprint(".");
       cnt++;
     } 
-    if (WiFi.status() == WL_CONNECTED) {tclear();tprint("Connection succeeded.");}
-    else {tclear();tprint("Connection failed.");}  
+    if (WiFi.status() == WL_CONNECTED) {tclear();tprint("Online");}
+    else {tclear();tprint("Offline");}  
   } else {
     WiFi.softAP(id.c_str(), ADMIN_PASSWORD);
-    tclear();tprint("SSID: ");tprint(id);
+    tclear();tprint(id);
   }
-
-  //webserver
+  tprint(" V");tprint(VERSION);
+  lcd.setCursor(0, 1);tprint(isSTA?WiFi.localIP():WiFi.softAPIP());
+  
+  //begin webserver
   createWebServerApi();
-  webServer.begin(); 
-
-  //init
-  tprint(" IP: ");tprint(isSTA?WiFi.localIP():WiFi.softAPIP());tprint(" ");
-  tprint(" Firmware Version: ");tprint(VERSION);tprint(" ");
-  tprint(" Mode: ");tprint(isSTA?"STA":"AP");tprint(" ");
+  webServer.begin();
   delay(1000);
 }
 
