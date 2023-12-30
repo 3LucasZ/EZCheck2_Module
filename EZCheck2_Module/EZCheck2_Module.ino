@@ -64,7 +64,7 @@ void setup(){
   pinMode(green,OUTPUT); digitalWrite(green,LOW);
 
   //load preferences
-  id = preferences.getString("id", DEFAULT_ID); if (!id || id.length() <= 5) id = DEFAULT_ID;
+  id = preferences.getString("id", DEFAULT_ID); if (!id || id.length() <= 4) id = DEFAULT_ID;
   tar = preferences.getString("tar", DEFAULT_TAR);
   signInPath = tar + "/api/post/join-machine";
   signOutPath = tar + "/api/post/leave-machine";
