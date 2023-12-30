@@ -66,8 +66,8 @@ void setup(){
   //load preferences
   id = preferences.getString("id", DEFAULT_ID); if (!id || id.length() <= 4) id = DEFAULT_ID;
   tar = preferences.getString("tar", DEFAULT_TAR);
-  signInPath = tar + "/api/post/join-machine";
-  signOutPath = tar + "/api/post/leave-machine";
+  signInPath = "https://"+tar + "/api/post/join-machine";
+  signOutPath = "https://"+tar + "/api/post/leave-machine";
   network = preferences.getString("network", DEFAULT_NETWORK);
   password = preferences.getString("password", DEFAULT_PASSWORD);
   isSTA = preferences.getBool("isSTA", true);
