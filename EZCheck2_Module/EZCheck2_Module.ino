@@ -7,6 +7,7 @@
 #include <WiFiClientSecure.h>
 #include <WebServer.h>
 #include <HTTPClient.h>
+#include <uri/UriBraces.h>
 
 #include <Update.h>
 #include <Preferences.h>
