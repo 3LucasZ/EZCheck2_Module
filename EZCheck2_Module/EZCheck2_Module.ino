@@ -194,15 +194,30 @@ boolean signOut(){
 }
 
 void createWebServerApi(){
+  //PAGES
   //home page with main forms
   webServer.on("/", HTTP_GET, []() {
     webServer.sendHeader("Connection", "close");
-    webServer.send(200, "text/html", serverIndex);
+    webServer.send(200, "text/html", indexHtml);
   });
-  //test
-  webServer.on("/test", HTTP_GET, []() {
+  //ota
+  webServer.on("/ota", HTTP_GET, []() {
     webServer.sendHeader("Connection", "close");
-    webServer.send(200, "text/html", testPage);
+    webServer.send(200, "text/html", otaHtml);
+  });
+  //about
+  webServer.on("/about", HTTP_GET, []() {
+    webServer.sendHeader("Connection", "close");
+    webServer.send(200, "text/html", aboutHtml);
+  });
+  
+  //API
+  //preferences reset
+  webServer.on("/factory-reset", HTTP_GET, []() {
+    webServer.sendHeader("Connection", "close");
+    webServer.send(200, "text/html", "factory reset.");
+    preferences.clear();
+    ESP.restart();
   });
   //handling uploading firmware file
   webServer.on("/update", HTTP_POST, []() {
