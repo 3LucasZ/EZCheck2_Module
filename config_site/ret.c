@@ -1,8 +1,27 @@
+const char* aboutHtml = 
+"<!DOCTYPE html>\n"
+"<html>\n"
+"  <head> </head>\n"
+"  <body>\n"
+"    <h1>About</h1>\n"
+"    <p>Content in progress</p>\n"
+"  </body>\n"
+"</html>\n";
+const char* indexHtml = 
+"<!DOCTYPE html>\n"
+"<html>\n"
+"  <head> </head>\n"
+"  <body>\n"
+"    <h1>Welcome to EZCheck Config!</h1>\n"
+"    <p>Content in progress</p>\n"
+"  </body>\n"
+"</html>\n";
 const char* otaHtml = 
 "<!DOCTYPE html>\n"
 "<html>\n"
 "  <head> </head>\n"
 "  <body>\n"
+"    <h1>EZCheck OTA Updater</h1>\n"
 "    <form\n"
 "      method='POST'\n"
 "      action='#'\n"
