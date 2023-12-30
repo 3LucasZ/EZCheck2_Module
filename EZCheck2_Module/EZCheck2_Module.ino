@@ -206,11 +206,26 @@ void createWebServerApi(){
   
   //API
   //preferences reset
-  webServer.on("/factory-reset", HTTP_GET, []() {
+  webServer.on("/api/factoryReset", HTTP_GET, []() {
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "text/html", "factory reset.");
     preferences.clear();
     ESP.restart();
+  });
+  //preferences update
+  webServer.on(UriBraces("/api/setId/{}"), HTTP_POST, []() {
+    webServer.sendHeader("Connection", "close");
+    webServer.send(200, "text/plain", "OK");
+    String newId  = webServer.pathArg(0);
+    id = newId;
+    preferences.putString("id", newId);
+  });
+  webServer.on(UriBraces("/api/setTar/{}"), HTTP_POST, []() {
+    webServer.sendHeader("Connection", "close");
+    webServer.send(200, "text/plain", "OK");
+    String newTar  = webServer.pathArg(0);
+    tar = newTar;
+    preferences.putString("tar", newTar);
   });
   //handling uploading firmware file
   webServer.on("/update", HTTP_POST, []() {
