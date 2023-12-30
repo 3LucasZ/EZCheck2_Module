@@ -2,6 +2,7 @@
 #include <Keypad.h>
 #include <LiquidCrystal.h>
 
+#include <ESPmDNS.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <WebServer.h>
@@ -71,6 +72,7 @@ void setup(){
   isSTA = preferences.getBool("isSTA", true);
   
   //begin wifi
+  WiFi.setHostname(id.c_str());
   if (isSTA){
     WiFi.begin(network.c_str(), password.c_str()); 
     tclear();tprint("X");
@@ -88,6 +90,7 @@ void setup(){
   }
   tprint(" V");tprint(STAMP);
   lcd.setCursor(0, 1);tprint(isSTA?WiFi.localIP():WiFi.softAPIP());
+  MDNS.begin(id.c_str());
   
   //begin webserver
   createWebServerApi();
