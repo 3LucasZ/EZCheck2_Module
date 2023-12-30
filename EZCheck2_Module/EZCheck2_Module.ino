@@ -216,7 +216,7 @@ void createWebServerApi(){
     preferences.clear();
     ESP.restart();
   });
-  //preferences update
+  //preferences CRUD
   webServer.on(UriBraces("/api/setId/{}"), HTTP_POST, []() {
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "text/plain", "OK");
@@ -231,6 +231,20 @@ void createWebServerApi(){
     tar = newTar;
     preferences.putString("tar", newTar);
   });
+  webServer.on(UriBraces("/api/getInfo"), HTTP_GET, []() {
+    webServer.sendHeader("Connection", "close");
+    DynamicJsonDocument doc(2048);
+    doc["id"] = id;
+    doc["tar"] = tar;
+    doc["stamp"] = STAMP;
+    doc["network"] = network;
+    doc["defaultId"] = DEFAULT_ID;
+    doc["signInPath"] = signInPath;
+    doc["signOutPath"] = signOutPath;
+    String msg; serializeJson(doc, msg);
+    webServer.send(200, "text/plain", msg);
+  });
+  
   //handling uploading firmware file
   webServer.on("/update", HTTP_POST, []() {
     webServer.sendHeader("Connection", "close");
