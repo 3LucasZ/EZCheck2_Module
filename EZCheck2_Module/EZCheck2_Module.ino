@@ -128,7 +128,6 @@ boolean signIn(){
     http.addHeader("Content-Type", "application/json");
     DynamicJsonDocument doc(1024);
     doc["machineName"] = id;
-    doc["machineSecret"] = API_KEY;
     doc["studentPIN"] = pass;
     doc["IP"] = WiFi.localIP();
     String msg; serializeJson(doc,msg);
@@ -166,7 +165,6 @@ boolean signOut(){
     http.addHeader("Content-Type", "application/json");
     DynamicJsonDocument doc(1024);
     doc["machineName"] = id;
-    doc["machineSecret"] = API_KEY;
     String msg; serializeJson(doc, msg);
     int responseCode = http.POST(msg);
     //handle res
