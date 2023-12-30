@@ -13,11 +13,6 @@
 #include "env.h"
 #include "pages.h"
 
-//Meta
-#define VERSION "2.2"
-#define DEFAULT_ID String("machine")+millis()
-#define DEFAULT_TAR "https://ezserver.local"
-
 //Webserver
 WebServer webServer(80);
 String signInPath; 
@@ -67,7 +62,7 @@ void setup(){
   pinMode(green,OUTPUT); digitalWrite(green,LOW);
 
   //load preferences
-  id = preferences.getString("id", DEFAULT_ID); if (!id) id = DEFAULT_ID;
+  id = preferences.getString("id", DEFAULT_ID); if (!id || id.length() <= 5) id = DEFAULT_ID;
   tar = preferences.getString("tar", DEFAULT_TAR);
   signInPath = tar + "/api/post/join-machine";
   signOutPath = tar + "/api/post/leave-machine";
@@ -78,10 +73,10 @@ void setup(){
   //begin wifi
   if (isSTA){
     WiFi.begin(network.c_str(), password.c_str()); 
-    tclear();tprint("Connecting");
+    tclear();tprint("X");
     int cnt = 0;
     while(WiFi.status() != WL_CONNECTED && cnt < 20) {
-      delay(500);
+      delay(1000);
       tprint(".");
       cnt++;
     } 
@@ -91,7 +86,7 @@ void setup(){
     WiFi.softAP(id.c_str(), ADMIN_PASSWORD);
     tclear();tprint(id);
   }
-  tprint(" V");tprint(VERSION);
+  tprint(" V");tprint(STAMP);
   lcd.setCursor(0, 1);tprint(isSTA?WiFi.localIP():WiFi.softAPIP());
   
   //begin webserver
