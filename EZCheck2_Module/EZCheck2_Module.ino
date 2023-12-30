@@ -15,7 +15,7 @@
 
 //Meta
 #define VERSION "2.2"
-#define DEFAULT_ID "machine-"+millis()
+#define DEFAULT_ID String("machine")+millis()
 #define DEFAULT_TAR "https://ezserver.local"
 
 //Webserver
