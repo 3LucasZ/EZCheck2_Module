@@ -109,7 +109,7 @@ void loop() {
     if (signedIn) signOut();
     if (key=='D') { //D -> pop pass
       if (pass.length()>0) pass.remove(pass.length()-1);
-      tclear();tprintlong("PIN: "+pass);
+      tclear();tprintlong("PIN: "+hide(pass));
     } else if (key=='*') { //* -> submit pass
       if (pass == ADMIN_PASSWORD){ //toggle STA/AP 
         preferences.putBool("isSTA",!isSTA);
@@ -117,7 +117,7 @@ void loop() {
       } else signIn();
     } else { //all other keys -> add char to pass
       pass.concat(key);
-      tclear();tprintlong("PIN: "+pass);
+      tclear();tprintlong("PIN: "+hide(pass));
     }
   }
   delay(1);
@@ -307,6 +307,11 @@ void tprint(IPAddress x){
 void tclear(){
   if (!sim) lcd.clear();
   else Serial.println();
+}
+String hide(String str) {
+  String ret = "";
+  for (int i=0;i<str.length();i++)ret+="*";
+  return ret;
 }
 unsigned char h2int(char c) {
     if (c >= '0' && c <='9'){
