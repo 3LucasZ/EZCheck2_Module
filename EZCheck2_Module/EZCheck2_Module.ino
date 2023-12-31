@@ -235,6 +235,7 @@ void createWebServerApi(){
     doc["defaultId"] = DEFAULT_ID;
     doc["signInPath"] = signInPath;
     doc["signOutPath"] = signOutPath;
+    doc["IP"] = isSTA?WiFi.localIP():WiFi.softAPIP();
     String msg; serializeJson(doc, msg);
     webServer.send(200, "text/plain", msg);
   });
@@ -276,7 +277,7 @@ void tprintlong(String x){
   if (!sim) {
     if (x.length() > 16) {
       lcd.print(x.substring(0,16));
-      lcd.setCursor(0, 1)
+      lcd.setCursor(0, 1);
       lcd.print(x.substring(16));
     } else {
       lcd.print(x);
