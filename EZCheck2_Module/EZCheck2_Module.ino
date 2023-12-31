@@ -29,6 +29,7 @@ String pass = "";
 //Preferences
 Preferences preferences; 
 String id;
+String safeId;
 String tar;
 String network;
 String password;
@@ -65,6 +66,7 @@ void setup(){
 
   //load preferences
   id = preferences.getString("id", DEFAULT_ID); if (!id || id.length() <= 4) id = DEFAULT_ID;
+  safeId = id; safeId.replace(" ","-");
   tar = preferences.getString("tar", DEFAULT_TAR);
   signInPath = "https://"+tar + "/api/post/join-machine";
   signOutPath = "https://"+tar + "/api/post/leave-machine";
@@ -73,7 +75,7 @@ void setup(){
   isSTA = preferences.getBool("isSTA", true);
   
   //begin wifi
-  WiFi.setHostname(id.c_str());
+  WiFi.setHostname(safeId.c_str());
   if (isSTA){
     WiFi.begin(network.c_str(), password.c_str()); 
     tclear();tprint("X");
@@ -91,7 +93,7 @@ void setup(){
   }
   tprint(" V");tprint(STAMP);
   lcd.setCursor(0, 1);tprint(isSTA?WiFi.localIP():WiFi.softAPIP());
-  MDNS.begin(id.c_str());
+  MDNS.begin(safeId.c_str());
   
   //begin webserver
   createWebServerApi();
@@ -228,6 +230,7 @@ void createWebServerApi(){
     webServer.sendHeader("Connection", "close");
     DynamicJsonDocument doc(2048);
     doc["id"] = id;
+    doc["safeId"] = safeId;
     doc["tar"] = tar;
     doc["stamp"] = STAMP;
     doc["network"] = network;
