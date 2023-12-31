@@ -122,10 +122,8 @@ void loop() {
 }
 
 boolean signIn(){
-  //ensure connected 
+  //handle connected 
   if(WiFi.status() == WL_CONNECTED){
-    //confirmation
-    tclear();tprint("Logging in.");
     //send request
     WiFiClientSecure client;client.setInsecure();HTTPClient http;
     http.begin(client, signInPath);
@@ -134,27 +132,22 @@ boolean signIn(){
     doc["machineName"] = id;
     doc["studentPIN"] = pass;
     doc["IP"] = WiFi.localIP();
-    String msg; serializeJson(doc,msg);
+    String msg;serializeJson(doc,msg);
     int resCode = http.POST(msg);
-    //handle res
-    String res = http.getString();
-    DynamicJsonDocument resData(1024);
-    deserializeJson(resData, res);    
+    //handle response
+    String res = http.getString();http.end();
     if (resCode==200) {
-      String tmp = resData["name"];
-      user = tmp;pass = "";http.end();
-      tclear();tprint("Hello ");tprint(user);tprint("!");
-      digitalWrite(green,HIGH);
-      signedIn = true;
+      user = res;pass = "";signedIn = true;
+      tclear();tprintlong(res);digitalWrite(green,HIGH);digitalWrite(red,LOW);
       return true;
     } else {
-      user = "";pass = "";http.end();
-      tclear();tprint(resCode+":"+res);
-      digitalWrite(red,HIGH);
+      user = "";pass = "";signedIn = false;
+      tclear();tprintlong("Err: "+res);digitalWrite(red,HIGH);
       return false;
     }
   }
-  tclear();tprint("WiFi not connected.");
+  //handle disconnected
+  tclear();tprint("Offline");
   return false;
 }
 
