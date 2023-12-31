@@ -103,10 +103,9 @@ void loop() {
   webServer.handleClient(); //handle webserver clients
   char key = tread(); //handle keypress
   if (key){
-    if (key=='#') { //# -> sign out
-      if (signedIn) signOut();
-    } else if (key=='D') { //D -> pop pass
-      pass.remove(pass.length()-1);
+    if (signedIn) signOut();
+    if (key=='D') { //D -> pop pass
+      if (pass.length()>0) pass.remove(pass.length()-1);
       tclear();tprint(pass);
     } else if (key=='*') { //* -> submit pass
       if (pass == ADMIN_PASSWORD){ //toggle STA/AP 
