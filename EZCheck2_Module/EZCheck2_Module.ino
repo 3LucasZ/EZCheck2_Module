@@ -200,6 +200,11 @@ void createWebServerApi(){
   
   //API
   //preferences reset
+  //ping
+  webServer.on("/api/ping", HTTP_POST, []() {
+    webServer.sendHeader("Connection", "close");
+    webServer.send(200, "text/plain", "pong");
+  });
   webServer.on("/api/factoryReset", HTTP_GET, []() {
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "text/html", "factory reset.");
