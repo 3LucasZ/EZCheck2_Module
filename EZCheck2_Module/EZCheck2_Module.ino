@@ -199,32 +199,31 @@ void createWebServerApi(){
   });
   
   //API
-  //preferences reset
   //ping
   webServer.on("/api/ping", HTTP_POST, []() {
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "text/plain", "pong");
   });
+  //preferences CRUD
   webServer.on("/api/factoryReset", HTTP_GET, []() {
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "text/html", "factory reset.");
     preferences.clear();
     ESP.restart();
   });
-  //preferences CRUD
   webServer.on(UriBraces("/api/setId/{}"), HTTP_POST, []() {
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "text/plain", "OK");
-    String newId  = webServer.pathArg(0);
-    id = newId;
+    String newId = webServer.pathArg(0);
     preferences.putString("id", newId);
+    ESP.restart();
   });
   webServer.on(UriBraces("/api/setTar/{}"), HTTP_POST, []() {
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "text/plain", "OK");
-    String newTar  = webServer.pathArg(0);
-    tar = newTar;
+    String newTar = webServer.pathArg(0);
     preferences.putString("tar", newTar);
+    ESP.restart();
   });
   webServer.on(UriBraces("/api/getInfo"), HTTP_GET, []() {
     webServer.sendHeader("Connection", "close");
@@ -239,7 +238,6 @@ void createWebServerApi(){
     String msg; serializeJson(doc, msg);
     webServer.send(200, "text/plain", msg);
   });
-  
   //handling uploading firmware file
   webServer.on("/update", HTTP_POST, []() {
     webServer.sendHeader("Connection", "close");
