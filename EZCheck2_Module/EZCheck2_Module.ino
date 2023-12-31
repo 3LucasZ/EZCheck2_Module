@@ -86,14 +86,14 @@ void setup(){
       tprint(".");
       delay(1000);
     }  
+    if (WiFi.status() == WL_CONNECTED) {tclear();tprint("Online");}
+    else {tclear();tprint("Offline");} 
   } else {
     WiFi.softAP(id.c_str(), ADMIN_PASSWORD);
+    tclear();tprint("AP");
   }
-  if (WiFi.status() == WL_CONNECTED) {tclear();tprint("Online");}
-  else {tclear();tprint("Offline");} 
   tprint(" V");tprint(STAMP);
   lcd.setCursor(0, 1);tprint(id);
-  if (!isSTA) tprint(" AP");
   MDNS.begin(safeId.c_str());
   
   //begin webserver
