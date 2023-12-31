@@ -272,6 +272,18 @@ char tread(){
   else if (Serial.available()) return Serial.read();
   else return '\0';
 }
+void tprintlong(String x){
+  if (!sim) {
+    if (x.length() > 16) {
+      lcd.print(x.substring(0,16));
+      lcd.setCursor(0, 1)
+      lcd.print(x.substring(16));
+    } else {
+      lcd.print(x);
+    }
+  }
+  else Serial.print(x);
+}
 void tprint(String x){
   if (!sim) lcd.print(x);
   else Serial.print(x);
