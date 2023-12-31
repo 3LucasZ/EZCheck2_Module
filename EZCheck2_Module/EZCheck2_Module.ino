@@ -142,7 +142,7 @@ boolean signIn(){
       return true;
     } else {
       user = "";pass = "";signedIn = false;
-      tclear();tprintlong("Err: "+res);digitalWrite(red,HIGH);
+      tclear();tprintlong(res);digitalWrite(red,HIGH);
       return false;
     }
   }
@@ -171,7 +171,7 @@ boolean signOut(){
     }
     else {
       user = "";pass = "";signedIn = true;
-      tclear();tprint(res);digitalWrite(red, HIGH);
+      tclear();tprintlong(res);digitalWrite(red, HIGH);
       return false;
     }
   }
