@@ -109,7 +109,7 @@ void loop() {
     if (signedIn) signOut();
     if (key=='D') { //D -> pop pass
       if (pass.length()>0) pass.remove(pass.length()-1);
-      tclear();tprint(pass);
+      tclear();tprintlong("PIN: "+pass);
     } else if (key=='*') { //* -> submit pass
       if (pass == ADMIN_PASSWORD){ //toggle STA/AP 
         preferences.putBool("isSTA",!isSTA);
@@ -117,7 +117,7 @@ void loop() {
       } else signIn();
     } else { //all other keys -> add char to pass
       pass.concat(key);
-      tclear();tprint(pass);
+      tclear();tprintlong("PIN: "+pass);
     }
   }
   delay(1);
