@@ -78,21 +78,22 @@ void setup(){
   WiFi.setHostname(safeId.c_str());
   if (isSTA){
     WiFi.begin(network.c_str(), password.c_str()); 
-    tclear();tprint("X");
+    tclear();tprint("Connecting");
     int cnt = 0;
-    while(WiFi.status() != WL_CONNECTED && cnt < 20) {
-      delay(1000);
-      tprint(".");
+    while(WiFi.status() != WL_CONNECTED && cnt <= 22) {
       cnt++;
-    } 
-    if (WiFi.status() == WL_CONNECTED) {tclear();tprint("Online");}
-    else {tclear();tprint("Offline");}  
+      if (cnt==7) lcd.setCursor(0, 1);
+      tprint(".");
+      delay(1000);
+    }  
   } else {
     WiFi.softAP(id.c_str(), ADMIN_PASSWORD);
-    tclear();tprint(id);
   }
+  if (WiFi.status() == WL_CONNECTED) {tclear();tprint("Online");}
+  else {tclear();tprint("Offline");} 
   tprint(" V");tprint(STAMP);
-  lcd.setCursor(0, 1);tprint(isSTA?WiFi.localIP():WiFi.softAPIP());
+  lcd.setCursor(0, 1);tprint(id);
+  if (!isSTA) tprint(" AP");
   MDNS.begin(safeId.c_str());
   
   //begin webserver
