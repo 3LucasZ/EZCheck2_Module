@@ -152,34 +152,31 @@ boolean signIn(){
 }
 
 boolean signOut(){
-  //ensure connected 
+  //handle connected 
   if(WiFi.status() == WL_CONNECTED){
-    //confirmation
-    tclear();tprint("Signing out.");
     //send request
     WiFiClientSecure client;client.setInsecure();HTTPClient http;
     http.begin(client, signOutPath);
     http.addHeader("Content-Type", "application/json");
     DynamicJsonDocument doc(1024);
     doc["machineName"] = id;
-    String msg; serializeJson(doc, msg);
-    int responseCode = http.POST(msg);
+    String msg;serializeJson(doc, msg);
+    int resCode = http.POST(msg);
     //handle res
-    String res = http.getString();
-    if (responseCode == 200) {
-      digitalWrite(green, LOW);
-      tclear();tprint("Signed out.");
-      user = "";pass = "";http.end();
-      signedIn = false;
+    String res = http.getString();http.end();
+    if (resCode == 200) {
+      user = "";pass = "";signedIn = false;
+      tclear();tprintlong(res);digitalWrite(green, LOW);
       return true;
     }
     else {
-      user = "";pass = "";http.end();
-      tclear();tprint(res);
+      user = "";pass = "";signedIn = true;
+      tclear();tprint(res);digitalWrite(red, HIGH);
       return false;
     }
   }
-  tclear();tprint("WiFi not connected.");
+  //handle disconnected
+  tclear();tprint("Offline");
   return false;
 }
 
