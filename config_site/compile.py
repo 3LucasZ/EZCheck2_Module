@@ -1,4 +1,5 @@
-names = ["about", "index", "ota"]
+# names = ["about", "index", "ota"]
+names = ["index"]
 out = "ret.c"
 
 open(out, "w").close()

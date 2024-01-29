@@ -2,7 +2,72 @@
 <html>
   <head> </head>
   <body>
-    <h1>Welcome to EZCheck Config!</h1>
-    <p>Content in progress</p>
+    <h1>EZCheck Configuration Tool</h1>
+    <h3>Set device id</h3>
+    <form>
+      New id:
+      <input type="text" placeholder="Ex: Laser Cutter" id="id" />
+      <br />
+      Secret: <input type="password" id="idSecret" />
+      <br />
+      <input type="submit" value="Set" />
+      <!-- <input type="submit" value="Set" style="width: 200px" /> -->
+    </form>
+    <h3>Set target url</h3>
+    <form>
+      New tar:
+      <input type="text" placeholder="Ex: https://google.com" id="tar" />
+      <br />
+      Secret: <input type="password" id="tarSecret" />
+      <br />
+      <input type="submit" value="Set" />
+    </form>
+    <h3>Update device firmware</h3>
+    <form
+      method="POST"
+      action="#"
+      enctype="multipart/form-data"
+      id="upload_form"
+    >
+      New firmware: <input type="file" name="update" />
+      <br />
+      Secret: <input type="password" id="idSecret" />
+      <br />
+      <input type="submit" value="Update" />
+    </form>
+    <div id="prg">Progress: 0%</div>
+    <script>
+      const form = document.getElementById("upload_form");
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const data = new FormData(form);
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState == XMLHttpRequest.DONE) {
+            if (xhr.status == 200) {
+              document.getElementById("myDiv").innerHTML = xhr.responseText;
+            } else if (xhr.status == 400) {
+              alert("There was an error 400");
+            } else {
+              alert("something else other than 200 was returned");
+            }
+          }
+        };
+        xhr.upload.addEventListener(
+          "progress",
+          function (evt) {
+            if (evt.lengthComputable) {
+              var per = evt.loaded / evt.total;
+              document.getElementById("prg").innerHTML =
+                "Progress: " + Math.round(per * 100) + "%";
+            }
+          },
+          false
+        );
+        xhr.open("POST", "/update");
+        console.log(xhr);
+        xhr.send(data);
+      });
+    </script>
   </body>
 </html>
