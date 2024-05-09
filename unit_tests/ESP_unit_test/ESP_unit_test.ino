@@ -61,9 +61,11 @@ void loop(){
         digitalWrite(red,LOW);
       }
       //wrong pass
-      else lcd.print("Denied Access");
-      digitalWrite(green,LOW);
-      digitalWrite(red,HIGH);
+      else {
+        lcd.print("Denied Access");
+        digitalWrite(green,LOW);
+        digitalWrite(red,HIGH);
+      }
       pass="";
     }
     //else -> add char to pass
