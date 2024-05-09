@@ -1,55 +1,91 @@
 <!DOCTYPE html>
 <html>
   <head> </head>
+  <style>
+    html {
+      max-width: 70ch;
+      padding: calc(1vmin + 0.5rem);
+      margin-inline: auto;
+      font-size: clamp(1em, 0.909em + 0.45vmin, 1.25em);
+      font-family: system-ui;
+    }
+    body :not(:is(h1, h2, h3, h4, h5, h6)) {
+      line-height: 1.75;
+    }
+  </style>
   <body>
-    <h1>EZCheck Configuration Tool</h1>
-    <h3>Set device id</h3>
-    <form>
+    <h1>EZCheck Config Tool 1.31</h1>
+    <p>Upon configuration, the module will restart.</p>
+
+    <div>
+      <h3>Set device id</h3>
       New id:
-      <input type="text" placeholder="Ex: Laser Cutter" id="id" />
+      <input type="text" placeholder="Ex: Laser Cutter" id="idDiv" />
       <br />
-      Secret: <input type="password" id="idSecret" />
+      Key: <input type="password" id="idKeyDiv" />
       <br />
-      <input type="submit" value="Set" />
-      <!-- <input type="submit" value="Set" style="width: 200px" /> -->
-    </form>
-    <h3>Set target url</h3>
-    <form>
+      <button id="setIdDiv" onclick="setId()">Set</button>
+    </div>
+
+    <div>
+      <h3>Set target url</h3>
       New tar:
-      <input type="text" placeholder="Ex: https://google.com" id="tar" />
+      <input type="text" placeholder="Ex: https://google.com" id="tarDiv" />
       <br />
-      Secret: <input type="password" id="tarSecret" />
+      Key: <input type="password" id="tarKeyDiv" />
       <br />
-      <input type="submit" value="Set" />
-    </form>
-    <h3>Update device firmware</h3>
-    <form
-      method="POST"
-      action="#"
-      enctype="multipart/form-data"
-      id="upload_form"
-    >
-      New firmware: <input type="file" name="update" />
+      <button id="setTarDiv" onclick="setTar">Set</button>
+    </div>
+
+    <div>
+      <h3>Update device firmware</h3>
+      <form method="POST" action="#" enctype="multipart/form-data" id="fileDiv">
+        <input type="file" name="update" />
+      </form>
+      Key: <input type="password" id="fileKeyDiv" />
       <br />
-      Secret: <input type="password" id="idSecret" />
-      <br />
-      <input type="submit" value="Update" />
-    </form>
-    <div id="prg">Progress: 0%</div>
+      <button id="setFileDiv" onclick="setFile()">Update</button>
+      <div>Progress: <span id="prg">0</span>%</div>
+    </div>
+
     <script>
-      const form = document.getElementById("upload_form");
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const data = new FormData(form);
+      const server = "";
+      // const server = "http://chibbles.local";
+      const idDiv = document.getElementById("idDiv");
+      const idKeyDiv = document.getElementById("idKeyDiv");
+      async function setId() {
+        const res = await fetch(
+          server + "/api/setId/" + idDiv.value + "/" + idKeyDiv.value,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        alert(res.json());
+      }
+      const tarDiv = document.getElementById("tarDiv");
+      const tarKeyDiv = document.getElementById("tarKeyDiv");
+      async function setTar() {
+        const res = await fetch(
+          server + "/api/setTar/" + tarDiv.value + "/" + tarKeyDiv.value,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        alert(res.json());
+      }
+      const fileDiv = document.getElementById("fileDiv");
+      const fileKeyDiv = document.getElementById("fileKeyDiv");
+      function setFile() {
+        const data = new FormData(fileDiv);
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
           if (xhr.readyState == XMLHttpRequest.DONE) {
             if (xhr.status == 200) {
-              document.getElementById("myDiv").innerHTML = xhr.responseText;
-            } else if (xhr.status == 400) {
-              alert("There was an error 400");
+              alert(xhr.responseText);
             } else {
-              alert("something else other than 200 was returned");
+              alert(xhr.status, "There was an error with the server");
             }
           }
         };
@@ -58,16 +94,15 @@
           function (evt) {
             if (evt.lengthComputable) {
               var per = evt.loaded / evt.total;
-              document.getElementById("prg").innerHTML =
-                "Progress: " + Math.round(per * 100) + "%";
+              document.getElementById("prg").innerHTML = Math.round(per * 100);
             }
           },
           false
         );
-        xhr.open("POST", "/update");
+        xhr.open("POST", server + "/update/" + fileKeyDiv.value);
         console.log(xhr);
         xhr.send(data);
-      });
+      }
     </script>
   </body>
 </html>
