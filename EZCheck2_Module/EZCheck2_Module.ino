@@ -259,8 +259,8 @@ void createWebServerApi() {
       webServer.send(500, "text/plain", "BAD KEY");
     }
   }, []() {
-    HTTPUpload& upload = webServer.upload();
     if (apiKey == ADMIN_PASSWORD) {
+    HTTPUpload& upload = webServer.upload();
     if (upload.status == UPLOAD_FILE_START) {
       Serial.printf("Update: %s\n", upload.filename.c_str());
       if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
@@ -281,6 +281,7 @@ void createWebServerApi() {
     }
     }
   });
+  webServer.begin();
 }
 
 //io
