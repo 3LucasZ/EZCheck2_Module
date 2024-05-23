@@ -193,7 +193,7 @@ void createWebServerApi() {
   //PAGES
   webServer.on("/", HTTP_GET, []() {
     webServer.sendHeader("Connection", "close");
-    webServer.send(200, "text/html", getIndex(safeId));
+    webServer.send(200, "text/html", getIndex(safeId, tar, STAMP));
   });
 
   //API
@@ -259,7 +259,6 @@ void createWebServerApi() {
       webServer.send(500, "text/plain", "BAD KEY");
     }
   }, []() {
-    if (apiKey == ADMIN_PASSWORD) {
     HTTPUpload& upload = webServer.upload();
     if (upload.status == UPLOAD_FILE_START) {
       Serial.printf("Update: %s\n", upload.filename.c_str());
@@ -279,9 +278,8 @@ void createWebServerApi() {
         Update.printError(Serial);
       }
     }
-    }
   });
-  webServer.begin();
+//  webServer.begin();
 }
 
 //io

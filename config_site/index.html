@@ -15,11 +15,12 @@
   </style>
   <body>
     <h1>EZCheck Config Tool 1.31</h1>
-    <h3>Module: [[[[[ID]]]]]</h3>
     <p>Upon configuration, the module will restart.</p>
 
     <div>
       <h3>Set device id</h3>
+      Old id: [[[[[ID]]]]]
+      <br />
       New id:
       <input type="text" placeholder="Ex: Laser Cutter" id="idDiv" />
       <br />
@@ -30,6 +31,8 @@
 
     <div>
       <h3>Set target url</h3>
+      Old tar: [[[[[TAR]]]]]
+      <br />
       New tar:
       <input type="text" placeholder="Ex: https://google.com" id="tarDiv" />
       <br />
@@ -40,6 +43,8 @@
 
     <div>
       <h3>Update device firmware</h3>
+      Old firmware version: [[[[[VER]]]]]
+      <br />
       <form method="POST" action="#" enctype="multipart/form-data" id="fileDiv">
         <input type="file" name="update" />
       </form>
@@ -50,8 +55,7 @@
     </div>
 
     <script>
-      const server = "";
-      // const server = "http://chibbles.local";
+      const server = "http://[[[[[ID]]]]].local";
       const idDiv = document.getElementById("idDiv");
       const idKeyDiv = document.getElementById("idKeyDiv");
       async function setId() {
