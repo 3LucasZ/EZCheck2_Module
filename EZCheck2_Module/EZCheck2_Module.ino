@@ -71,8 +71,8 @@ void setup() {
   tar = preferences.getString("tar", DEFAULT_TAR);
   signInPath = "https://" + tar + "/api/post/join-machine";
   signOutPath = "https://" + tar + "/api/post/leave-machine";
-  network = preferences.getString("network", DEFAULT_NETWORK);
-  password = preferences.getString("password", DEFAULT_PASSWORD);
+  network = DEFAULT_NETWORK;
+  password = DEFAULT_PASSWORD;
   isSTA = preferences.getBool("isSTA", true);
 
   //begin wifi
