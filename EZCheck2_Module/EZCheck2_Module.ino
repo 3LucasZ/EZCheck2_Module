@@ -21,7 +21,7 @@ String signInPath;
 String signOutPath;
 
 //Global
-bool sim = false;
+bool sim = true;
 bool signedIn = false;
 String user = "";
 String pass = "";
@@ -151,7 +151,7 @@ boolean signIn() {
       return true;
     } else {
       user = ""; pass = ""; signedIn = false;
-      tclear(); tprintlong(res); digitalWrite(red, HIGH);
+      tclear(); tprintlong(res); digitalWrite(red, HIGH); digitalWrite(green, LOW);
       return false;
     }
   }
