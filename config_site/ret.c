@@ -1,5 +1,5 @@
-const char* indexHtml = 
-"<!DOCTYPE html>\n"
+String getIndex(String ID) {
+String ret = "<!DOCTYPE html>\n"
 "<html>\n"
 "  <head> </head>\n"
 "  <style>\n"
@@ -16,6 +16,7 @@ const char* indexHtml =
 "  </style>\n"
 "  <body>\n"
 "    <h1>EZCheck Config Tool 1.31</h1>\n"
+"    <h3>Module: " + ID + "</h3>\n"
 "    <p>Upon configuration, the module will restart.</p>\n"
 "\n"
 "    <div>\n"
@@ -106,4 +107,5 @@ const char* indexHtml =
 "      }\n"
 "    </script>\n"
 "  </body>\n"
-"</html>\n";
+"</html>\n"
+;return ret;}

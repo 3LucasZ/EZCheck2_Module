@@ -96,7 +96,7 @@ void setup() {
       tprint("Offline");
     }
   } else {
-    WiFi.softAP(id.c_str(), ADMIN_PASSWORD);
+    WiFi.softAP(safeId.c_str(), ADMIN_PASSWORD);
     tclear(); tprint("AP");
   }
   tprint(" V"); tprint(STAMP);
@@ -193,7 +193,7 @@ void createWebServerApi() {
   //PAGES
   webServer.on("/", HTTP_GET, []() {
     webServer.sendHeader("Connection", "close");
-    webServer.send(200, "text/html", indexHtml);
+    webServer.send(200, "text/html", getIndex(safeId));
   });
 
   //API
