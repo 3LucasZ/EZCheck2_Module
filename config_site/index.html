@@ -51,7 +51,11 @@
       Key: <input type="password" id="fileKeyDiv" />
       <br />
       <button id="setFileDiv" onclick="setFile()">Update</button>
-      <div>Progress: <span id="prg">0</span>%</div>
+      <!-- <div>Progress: <span id="prg">0/0</span></div> -->
+      <br />
+      Note: the update process takes up to 2 minutes. If you are alerted of an
+      error midway, please contact us. You can confirm an update finished
+      successfully by viewing the module's status screen.
     </div>
 
     <script>
@@ -66,7 +70,7 @@
             headers: { "Content-Type": "application/json" },
           }
         );
-        alert(res.json());
+        alert(res.status + ": " + (await res.json()));
       }
       const tarDiv = document.getElementById("tarDiv");
       const tarKeyDiv = document.getElementById("tarKeyDiv");
@@ -78,7 +82,7 @@
             headers: { "Content-Type": "application/json" },
           }
         );
-        alert(res.json());
+        alert(res.status + ": " + (await res.json()));
       }
       const fileDiv = document.getElementById("fileDiv");
       const fileKeyDiv = document.getElementById("fileKeyDiv");
@@ -87,19 +91,18 @@
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
           if (xhr.readyState == XMLHttpRequest.DONE) {
-            if (xhr.status == 200) {
-              alert(xhr.responseText);
-            } else {
-              alert(xhr.status, "There was an error with the server");
-            }
+            alert(xhr.status + ": " + xhr.responseText);
           }
         };
         xhr.upload.addEventListener(
           "progress",
           function (evt) {
             if (evt.lengthComputable) {
-              var per = evt.loaded / evt.total;
-              document.getElementById("prg").innerHTML = Math.round(per * 100);
+              console.log("length IS computable");
+              // document.getElementById("prg").innerHTML =
+              //   "" + evt.loaded + "/" + evt.total;
+            } else {
+              console.log("length NOT computable");
             }
           },
           false

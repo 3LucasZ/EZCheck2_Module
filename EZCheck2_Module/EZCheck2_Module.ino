@@ -251,17 +251,18 @@ void createWebServerApi() {
   //handling uploading firmware file
   webServer.on(UriBraces("/update/{}"), HTTP_POST, []() {
     webServer.sendHeader("Connection", "close");
-    apiKey = webServer.pathArg(0);
-    if (apiKey == ADMIN_PASSWORD) {
-      webServer.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
-      ESP.restart();
-    } else {
-      webServer.send(500, "text/plain", "BAD KEY");
-    }
+    webServer.send(200, "text/plain", (Update.hasError()) ? "Update failure" : "Update success");
+    ESP.restart();
   }, []() {
+    apiKey = webServer.pathArg(0);
+    if (apiKey != ADMIN_PASSWORD){
+      webServer.sendHeader("Connection", "close");
+      webServer.send(500, "text/plain", "Incorrect password");
+      return;
+    }
     HTTPUpload& upload = webServer.upload();
     if (upload.status == UPLOAD_FILE_START) {
-      Serial.printf("Update: %s\n", upload.filename.c_str());
+      tclear(); tprint("Upd "); tprint(upload.filename);
       if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
         Update.printError(Serial);
       }
@@ -272,14 +273,14 @@ void createWebServerApi() {
       }
     } else if (upload.status == UPLOAD_FILE_END) {
       if (Update.end(true)) { //true to set the size to the current progress
-        preferences.putBool("isSTA", true);
-        Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+//        preferences.putBool("isSTA", true);
+        tclear(); tprint("Upd 200 Reboot"); 
+//        tprint(upload.totalSize);
       } else {
         Update.printError(Serial);
       }
     }
   });
-//  webServer.begin();
 }
 
 //io
