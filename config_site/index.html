@@ -30,6 +30,21 @@
     </div>
 
     <div>
+      <h3>Set network</h3>
+      Old network: [[[[[NETWORK]]]]]
+      <br />
+      New network:
+      <input type="text" placeholder="Ex: SSID" id="networkDiv" />
+      <br />
+      New network's password:
+      <input type="text" placeholder="Ex: secret" id="passwordDiv" />
+      <br />
+      Key: <input type="password" id="networkKeyDiv" />
+      <br />
+      <button id="setNetworkDiv" onclick="setNetwork()">Set</button>
+    </div>
+
+    <div>
       <h3>Set target url</h3>
       Old tar: [[[[[TAR]]]]]
       <br />
@@ -59,6 +74,7 @@
     </div>
 
     <script>
+      // const server = "http://cnc-mill.local";
       const server = "http://[[[[[ID]]]]].local";
       const idDiv = document.getElementById("idDiv");
       const idKeyDiv = document.getElementById("idKeyDiv");
@@ -70,8 +86,29 @@
             headers: { "Content-Type": "application/json" },
           }
         );
-        alert(res.status + ": " + (await res.json()));
+        alert(res.status + ": " + (await res.text()));
       }
+
+      const networkDiv = document.getElementById("networkDiv");
+      const passwordDiv = document.getElementById("passwordDiv");
+      const networkKeyDiv = document.getElementById("networkKeyDiv");
+      async function setNetwork() {
+        const res = await fetch(
+          server +
+            "/api/setNetwork/" +
+            networkDiv.value +
+            "/" +
+            passwordDiv.value +
+            "/" +
+            networkKeyDiv.value,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        alert(res.status + ": " + (await res.text()));
+      }
+
       const tarDiv = document.getElementById("tarDiv");
       const tarKeyDiv = document.getElementById("tarKeyDiv");
       async function setTar() {
@@ -82,7 +119,7 @@
             headers: { "Content-Type": "application/json" },
           }
         );
-        alert(res.status + ": " + (await res.json()));
+        alert(res.status + ": " + (await res.text()));
       }
       const fileDiv = document.getElementById("fileDiv");
       const fileKeyDiv = document.getElementById("fileKeyDiv");

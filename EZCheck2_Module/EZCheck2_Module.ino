@@ -71,8 +71,8 @@ void setup() {
   tar = preferences.getString("tar", DEFAULT_TAR);
   signInPath = "https://" + tar + "/api/post/join-machine";
   signOutPath = "https://" + tar + "/api/post/leave-machine";
-  network = DEFAULT_NETWORK;
-  password = DEFAULT_PASSWORD;
+  network = preferences.getString("network", DEFAULT_NETWORK);
+  password = preferences.getString("password", DEFAULT_PASSWORD);
   isSTA = preferences.getBool("isSTA", true);
 
   //begin wifi
@@ -193,7 +193,7 @@ void createWebServerApi() {
   //PAGES
   webServer.on("/", HTTP_GET, []() {
     webServer.sendHeader("Connection", "close");
-    webServer.send(200, "text/html", getIndex(safeId, tar, STAMP));
+    webServer.send(200, "text/html", getIndex(safeId, network, tar, STAMP));
   });
 
   //API
@@ -206,7 +206,7 @@ void createWebServerApi() {
       preferences.clear();
       ESP.restart();
     } else {
-      webServer.send(500, "text/plain", "BAD KEY");
+      webServer.send(500, "text/plain", "Incorrect password");
     }
   });
   webServer.on(UriBraces("/api/setId/{}/{}"), HTTP_POST, []() {
@@ -218,7 +218,21 @@ void createWebServerApi() {
       preferences.putString("id", urldecode(newId));
       ESP.restart();
     } else {
-      webServer.send(500, "text/plain", "BAD KEY");
+      webServer.send(500, "text/plain", "Incorrect password");
+    }
+  });
+  webServer.on(UriBraces("/api/setNetwork/{}/{}/{}"), HTTP_POST, []() {
+    webServer.sendHeader("Connection", "close");
+    String newNetwork = webServer.pathArg(0);
+    String newPassword = webServer.pathArg(1);
+    String key = webServer.pathArg(2);
+    if (key == ADMIN_PASSWORD) {
+      webServer.send(200, "text/plain", "OK");
+      preferences.putString("network", urldecode(newNetwork));
+      preferences.putString("password", urldecode(newPassword));
+      ESP.restart();
+    } else {
+      webServer.send(500, "text/plain", "Incorrect password");
     }
   });
   webServer.on(UriBraces("/api/setTar/{}/{}"), HTTP_POST, []() {
@@ -230,7 +244,7 @@ void createWebServerApi() {
       preferences.putString("tar", newTar);
       ESP.restart();
     } else {
-      webServer.send(500, "text/plain", "BAD KEY");
+      webServer.send(500, "text/plain", "Incorrect password");
     }
   });
   webServer.on(UriBraces("/api/getInfo"), HTTP_GET, []() {
@@ -251,7 +265,7 @@ void createWebServerApi() {
   //handling uploading firmware file
   webServer.on(UriBraces("/update/{}"), HTTP_POST, []() {
     webServer.sendHeader("Connection", "close");
-    webServer.send(200, "text/plain", (Update.hasError()) ? "Update failure" : "Update success");
+    webServer.send(200, "text/plain", (Update.hasError()) ? "Update error" : "Update success!");
     ESP.restart();
   }, []() {
     apiKey = webServer.pathArg(0);
@@ -262,21 +276,24 @@ void createWebServerApi() {
     }
     HTTPUpload& upload = webServer.upload();
     if (upload.status == UPLOAD_FILE_START) {
-      tclear(); tprint("Upd "); tprint(upload.filename);
+      tclear(); tprint(upload.filename);
       if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
+        tclear(); tprint("Update error"); 
         Update.printError(Serial);
       }
     } else if (upload.status == UPLOAD_FILE_WRITE) {
       /* flashing firmware to ESP*/
       if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+        tclear(); tprint("Update error"); 
         Update.printError(Serial);
       }
     } else if (upload.status == UPLOAD_FILE_END) {
       if (Update.end(true)) { //true to set the size to the current progress
 //        preferences.putBool("isSTA", true);
-        tclear(); tprint("Upd 200 Reboot"); 
+        tclear(); tprint("Update success!"); 
 //        tprint(upload.totalSize);
       } else {
+        tclear(); tprint("Update error"); 
         Update.printError(Serial);
       }
     }
